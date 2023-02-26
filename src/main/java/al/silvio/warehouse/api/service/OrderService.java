@@ -109,8 +109,7 @@ public class OrderService {
         orderManager.updateOrder(updateCandidate);
     }
     
-    public void deleteOrder(Long orderNumber, String token) {
-        tokenService.authorizeOperation(token, List.of(UserRole.WAREHOUSE_MANAGER));
+    public void deleteOrder(Long orderNumber) {
         orderManager.deleteOrder(orderNumber);
     }
 }

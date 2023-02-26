@@ -10,6 +10,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -29,9 +30,8 @@ public class OrderController {
     private final OrderService orderService;
     
     @GetMapping("/{orderNumber}")
-    public ResponseEntity<Object> getById(
-            @PathVariable
-            Long orderNumber) {
+    @PreAuthorize("hasAnyAuthority('WAREHOUSE_MANAGER', 'CLIENT')")
+    public ResponseEntity<Object> getById(@PathVariable Long orderNumber) {
         try {
             return ResponseEntity.ok(orderService.getByOrderNumber(orderNumber));
         } catch (CustomException badRequest) {
@@ -45,11 +45,8 @@ public class OrderController {
     }
     
     @GetMapping
-    public ResponseEntity<Object> getList(
-            @RequestHeader("Authorization")
-            String token,
-            @RequestParam(required = false)
-            OrderStatus status) {
+    @PreAuthorize("hasAnyAuthority('WAREHOUSE_MANAGER', 'CLIENT')")
+    public ResponseEntity<Object> getList(@RequestHeader("Authorization") String token, @RequestParam(required = false) OrderStatus status) {
         try {
             return ResponseEntity.ok(orderService.getList(token, status));
         } catch (CustomException badRequest) {
@@ -63,11 +60,8 @@ public class OrderController {
     }
     
     @PostMapping
-    public ResponseEntity<Object> createOrder(
-            @RequestBody
-            OrderExtendedDto request,
-            @RequestHeader("Authorization")
-            String token) {
+    @PreAuthorize("hasAnyAuthority('CLIENT')")
+    public ResponseEntity<Object> createOrder(@RequestBody OrderExtendedDto request, @RequestHeader("Authorization") String token) {
         try {
             orderService.createOrder(request, token);
             HttpHeaders responseHeaders = new HttpHeaders();
@@ -84,13 +78,8 @@ public class OrderController {
     }
     
     @PatchMapping("/{orderNumber}")
-    public ResponseEntity<Object> updateOrder(
-            @RequestHeader("Authorization")
-            String token,
-            @PathVariable
-            Long orderNumber,
-            @RequestBody
-            OrderExtendedDto request) {
+    @PreAuthorize("hasAnyAuthority('WAREHOUSE_MANAGER', 'CLIENT')")
+    public ResponseEntity<Object> updateOrder(@PathVariable Long orderNumber, @RequestBody OrderExtendedDto request) {
         try {
             request.setOrderNumber(orderNumber);
             orderService.updateOrder(request);
@@ -106,13 +95,10 @@ public class OrderController {
     }
     
     @DeleteMapping("/{orderNumber}")
-    public ResponseEntity<Object> deleteUser(
-            @RequestHeader("Authorization")
-            String token,
-            @PathVariable
-            Long orderNumber) {
+    @PreAuthorize("hasAnyAuthority('WAREHOUSE_MANAGER')")
+    public ResponseEntity<Object> deleteUser(@PathVariable Long orderNumber) {
         try {
-            orderService.deleteOrder(orderNumber, token);
+            orderService.deleteOrder(orderNumber);
             return new ResponseEntity<>("Order deleted successfully", HttpStatus.OK);
         } catch (CustomException badRequest) {
             String errorMessage = badRequest.getMessage();
