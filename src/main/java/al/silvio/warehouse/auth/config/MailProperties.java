@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConfigurationProperties("warehouse.mail")
+@ConfigurationProperties("spring.mail")
 @Getter
 @Setter
 public class MailProperties {
