@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN" monitorInterval="30">
+
+    <!-- Logging Properties -->
+    <Properties>
+        <Property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %mdc{uri} - [%threadName] - %c{10}:%L  - %msg%n"/>
+        <Property name="APP_LOG_ROOT">/Users/silvioprogonati/Desktop/Dev/var/log/warehouse</Property>
+    </Properties>
+    <Appenders>
+        <RollingFile name="warehouse-log" fileName="${sys:APP_LOG_ROOT}/warehouse.log"
+                     filePattern="${sys:APP_LOG_ROOT}/warehouse.log-%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout>
+                <pattern>${LOG_PATTERN}</pattern>
+            </PatternLayout>
+            <Policies>
+                <TimeBasedTriggeringPolicy interval="1" modulate="true" />
+            </Policies>
+            <DefaultRolloverStrategy max="30"/>
+        </RollingFile>
+    </Appenders>
+    <Loggers>
+        <!-- avoid duplicated logs with additivity=false -->
+        <Logger name="warehouse-log" level="debug" additivity="false">
+            <AppenderRef ref="warehouse-log"/>
+        </Logger>
+        <Root level="error">
+            <AppenderRef ref="warehouse-log"/>
+        </Root>
+    </Loggers>
+
+</Configuration>
