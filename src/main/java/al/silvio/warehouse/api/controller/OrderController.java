@@ -30,7 +30,6 @@ public class OrderController {
     private final OrderService orderService;
     
     @GetMapping("/{orderNumber}")
-    @PreAuthorize("hasAnyAuthority('WAREHOUSE_MANAGER', 'CLIENT')")
     public ResponseEntity<Object> getById(@PathVariable Long orderNumber) {
         try {
             return ResponseEntity.ok(orderService.getByOrderNumber(orderNumber));
@@ -45,10 +44,10 @@ public class OrderController {
     }
     
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('WAREHOUSE_MANAGER', 'CLIENT')")
-    public ResponseEntity<Object> getList(@RequestHeader("Authorization") String token, @RequestParam(required = false) OrderStatus status) {
+    public ResponseEntity<Object> getList(@RequestParam(required = false) OrderStatus status, @RequestParam(required = false) String userName,
+            @RequestParam int page, @RequestParam int size) {
         try {
-            return ResponseEntity.ok(orderService.getList(token, status));
+            return ResponseEntity.ok(orderService.getList(status, userName, page, size));
         } catch (CustomException badRequest) {
             String errorMessage = badRequest.getMessage();
             log.warn("Bad request. {}", errorMessage);
@@ -63,9 +62,9 @@ public class OrderController {
     @PreAuthorize("hasAnyAuthority('CLIENT')")
     public ResponseEntity<Object> createOrder(@RequestBody OrderExtendedDto request, @RequestHeader("Authorization") String token) {
         try {
-            orderService.createOrder(request, token);
+            Long orderNumber = orderService.createOrder(request);
             HttpHeaders responseHeaders = new HttpHeaders();
-            responseHeaders.set("Location", "/order/" + request.getOrderNumber());
+            responseHeaders.set("Location", "/order/" + orderNumber);
             return new ResponseEntity<>(responseHeaders, HttpStatus.CREATED);
         } catch (CustomException badRequest) {
             String errorMessage = badRequest.getMessage();

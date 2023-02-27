@@ -6,9 +6,12 @@ import al.silvio.warehouse.auth.model.ui.AuthenticationRequest;
 import al.silvio.warehouse.auth.model.ui.AuthenticationResponse;
 import al.silvio.warehouse.auth.model.ui.UserDto;
 import al.silvio.warehouse.auth.model.user.User;
+import al.silvio.warehouse.utils.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -48,6 +51,16 @@ public class AuthenticationService {
     
     public void renewPassword(String email) {
         userService.renewPassword(email);
+    }
+    
+    public String getRole() {
+        return getPrincipal().getAuthorities().stream()
+                .findAny()
+                .orElseThrow(() -> new CustomException("Something went wrong", 400))
+                .getAuthority();
+    }
+    public UserDetails getPrincipal() {
+        return (UserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 }
 

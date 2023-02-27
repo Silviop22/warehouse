@@ -12,4 +12,5 @@ public class OrderDto {
     private Long orderNumber;
     private LocalDate submittedDate;
     private OrderStatus status;
+    private String customer;
 }

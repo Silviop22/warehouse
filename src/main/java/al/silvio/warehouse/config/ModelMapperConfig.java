@@ -1,14 +1,18 @@
 package al.silvio.warehouse.config;
 
 import al.silvio.warehouse.model.Item;
+import al.silvio.warehouse.model.Order;
+import al.silvio.warehouse.model.OrderItem;
 import al.silvio.warehouse.model.Truck;
 import al.silvio.warehouse.model.ui.ItemDto;
+import al.silvio.warehouse.model.ui.OrderItemDto;
 import al.silvio.warehouse.model.ui.TruckDto;
 import com.remondis.remap.Mapper;
 import com.remondis.remap.Mapping;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+@SuppressWarnings("ResultOfMethodCallIgnored")
 @Configuration
 public class ModelMapperConfig {
     
@@ -35,5 +39,25 @@ public class ModelMapperConfig {
     @Bean
     public Mapper<ItemDto, Item> itemDtoEntityMapper() {
         return Mapping.from(ItemDto.class).to(Item.class).mapper();
+    }
+    
+    @Bean
+    public Mapper<OrderItem, OrderItemDto> orderItemDtoMapper() {
+        return Mapping.from(OrderItem.class)
+                .to(OrderItemDto.class)
+                .replace(OrderItem::getOrder, OrderItemDto::getOrderNumber)
+                .withSkipWhenNull(Order::getOrderNumber)
+                .useMapper(itemEntityDtoMapper())
+                .mapper();
+    }
+    
+    @Bean
+    public Mapper<OrderItemDto, OrderItem> orderItemEntityMapper() {
+        return Mapping.from(OrderItemDto.class)
+                .to(OrderItem.class)
+                .omitInSource(OrderItemDto::getOrderNumber)
+                .omitInDestination(OrderItem::getOrder)
+                .useMapper(itemDtoEntityMapper())
+                .mapper();
     }
 }
