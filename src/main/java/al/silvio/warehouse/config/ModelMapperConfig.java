@@ -18,12 +18,15 @@ public class ModelMapperConfig {
     
     @Bean
     public Mapper<TruckDto, Truck> truckDtoEntityMapper() {
-        return Mapping.from(TruckDto.class).to(Truck.class).mapper();
+        return Mapping.from(TruckDto.class)
+                .to(Truck.class)
+                .omitInDestination(Truck::getOrderTruck)
+                .mapper();
     }
     
     @Bean
     public Mapper<Truck, TruckDto> truckEntityDtoMapper() {
-        return Mapping.from(Truck.class).to(TruckDto.class).mapper();
+        return Mapping.from(Truck.class).to(TruckDto.class).omitInSource(Truck::getOrderTruck).mapper();
     }
     
     @Bean

@@ -1,21 +1,38 @@
-package al.silvio.warehouse.api.utils;
+package al.silvio.warehouse.utils;
 
+import al.silvio.warehouse.api.service.KeyValueService;
 import al.silvio.warehouse.auth.model.user.UserRole;
+import al.silvio.warehouse.model.Key;
 import al.silvio.warehouse.model.OrderStatus;
-import al.silvio.warehouse.utils.CustomException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class OrderUtils {
-    
+    private final KeyValueService keyValueService;
+    private static final Set<DayOfWeek> WEEKEND = EnumSet.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY);
     private static final HashMap<String, List<OrderStatus>> assignedActions = new HashMap<>() {{
         put(UserRole.CLIENT.name(), List.of(OrderStatus.CREATED, OrderStatus.CANCELED, OrderStatus.AWAITING_APPROVAL));
         put(UserRole.WAREHOUSE_MANAGER.name(), List.of(OrderStatus.UNDER_DELIVERY, OrderStatus.APPROVED, OrderStatus.DECLINED));
     }};
     
+    public List<LocalDate> getBusinessDates(Long period) {
+        LocalDate endDate = LocalDate.now().plusDays(period);
+        List<LocalDate> publicHolidays = keyValueService.findOrException(Key.PUBLIC_HOLIDAYS);
+        return LocalDate.now().datesUntil(endDate)
+                .filter(d -> !WEEKEND.contains(d.getDayOfWeek()))
+                .filter(d -> !publicHolidays.contains(d))
+                .collect(Collectors.toList());
+    }
     public void validateStatusUpdate(OrderStatus currentStatus, OrderStatus statusUpdate, String role) {
         if (isStatusUpdateForbidden(currentStatus, statusUpdate) | isActionForbidden(statusUpdate, role)) {
             throw new CustomException("Invalid status.", 400);

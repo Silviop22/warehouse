@@ -17,7 +17,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDate;
 
 @Log4j2
 @RestController
@@ -43,9 +46,10 @@ public class TruckController {
     }
     
     @GetMapping
-    public ResponseEntity<Object> getTruckList() {
+    public ResponseEntity<Object> getTruckList(@RequestParam(required = false) Double quantity,
+            @RequestParam(required = false) LocalDate shippingDate) {
         try {
-            return ResponseEntity.ok(truckService.getTruckList());
+            return ResponseEntity.ok(truckService.getTruckList(quantity, shippingDate));
         } catch (CustomException badRequest) {
             String errorMessage = badRequest.getMessage();
             log.warn("Bad request. {}", errorMessage);

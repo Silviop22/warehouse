@@ -1,6 +1,5 @@
 package al.silvio.warehouse.api.service;
 
-import al.silvio.warehouse.api.utils.OrderUtils;
 import al.silvio.warehouse.auth.model.user.User;
 import al.silvio.warehouse.auth.service.AuthenticationService;
 import al.silvio.warehouse.auth.service.UserService;
@@ -16,7 +15,10 @@ import al.silvio.warehouse.model.ui.OrderDto;
 import al.silvio.warehouse.model.ui.OrderExtendedDto;
 import al.silvio.warehouse.model.ui.OrderItemDto;
 import al.silvio.warehouse.model.ui.PagedResult;
+import al.silvio.warehouse.model.ui.ShippingDay;
 import al.silvio.warehouse.model.ui.TruckDto;
+import al.silvio.warehouse.utils.CustomException;
+import al.silvio.warehouse.utils.OrderUtils;
 import com.remondis.remap.Mapper;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +29,9 @@ import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.format.TextStyle;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -74,6 +78,11 @@ public class OrderService {
                         .build());
         return PagedResult.fromPage(orderPage);
     }
+    public List<ShippingDay> getAvailableDates(Long period) {
+        return orderUtils.getBusinessDates(period).stream()
+                .map(d -> new ShippingDay(d, d.getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.getDefault())))
+                .collect(Collectors.toList());
+    }
     
     public Long createOrder(OrderExtendedDto orderRequest) {
         String username = authenticationService.getPrincipal().getUsername();
@@ -113,8 +122,8 @@ public class OrderService {
         }
         
         if (statusUpdate.equals(OrderStatus.UNDER_DELIVERY)) {
-            existing.setDeadlineDate(existing.getDeadlineDate());
             addTrucksToOrder(existing, orderRequest.getTrucks());
+            existing.setDeadlineDate(existing.getDeadlineDate());
         }
         
         orderManager.updateOrder(existing);
@@ -129,14 +138,33 @@ public class OrderService {
         order.setOrderedItems(orderedItems);
     }
     
-    private void addTrucksToOrder(Order order, @NonNull List<TruckDto> trucks) {
-        List<OrderTruck> orderTrucks = trucks.stream().map(truckDtoEntityMapper::map)
+    private void addTrucksToOrder(Order order, @NonNull List<TruckDto> orderTruckList) {
+        List<OrderTruck> orderTrucks = mapTruckDtoList(order, orderTruckList);
+        double capacity = orderTrucks.stream()
+                .map(OrderTruck::getTruck)
+                .map(Truck::getContainerVolume)
+                .mapToDouble(Double::doubleValue)
+                .sum();
+    
+        double volumeToBeShipped = order.getOrderedItems().stream()
+                .map(o -> o.getItem().getPackageVolume() * o.getQuantity())
+                .mapToDouble(Double::doubleValue)
+                .sum();
+        
+        if(volumeToBeShipped > capacity) {
+            throw new CustomException("The trucks you have selected cannot fulfill this shipment.", 400);
+        }
+        
+        order.setOrderTrucks(orderTrucks);
+    }
+    
+    private List<OrderTruck> mapTruckDtoList(Order order, @NonNull List<TruckDto> trucks) {
+        return trucks.stream().map(truckDtoEntityMapper::map)
                 .map(truck -> OrderTruck.builder()
                         .order(order)
                         .truck(truck)
                         .build())
                 .collect(Collectors.toList());
-        order.setOrderTrucks(orderTrucks);
     }
     
     private List<OrderItem> mapOrderItemDtoList(Order order, List<OrderItemDto> orderItemDtoList) {

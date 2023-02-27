@@ -58,6 +58,20 @@ public class OrderController {
         }
     }
     
+    @GetMapping("/dates")
+    public ResponseEntity<Object> getAvailableShippingDates(@RequestParam Long orderNumber, @RequestParam Long period) {
+        try {
+            return ResponseEntity.ok(orderService.getAvailableDates(period));
+        } catch (CustomException badRequest) {
+            String errorMessage = badRequest.getMessage();
+            log.warn("Bad request. {}", errorMessage);
+            return new ResponseEntity<>(errorMessage, HttpStatus.valueOf(badRequest.getStatusCode()));
+        } catch (Exception internalError) {
+            log.error("Error observed on the backend", internalError);
+            return new ResponseEntity<>(AppUtils.SERVER_ERROR_MESSAGE, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    
     @PostMapping
     @PreAuthorize("hasAnyAuthority('CLIENT')")
     public ResponseEntity<Object> createOrder(@RequestBody OrderExtendedDto request, @RequestHeader("Authorization") String token) {

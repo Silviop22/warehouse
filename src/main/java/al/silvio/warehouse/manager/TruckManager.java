@@ -1,11 +1,13 @@
 package al.silvio.warehouse.manager;
 
 import al.silvio.warehouse.model.Truck;
+import al.silvio.warehouse.model.TruckTier;
 import al.silvio.warehouse.repository.TruckRepository;
 import al.silvio.warehouse.utils.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,7 +17,10 @@ public class TruckManager {
     
     private final TruckRepository localRepository;
     
-    public List<Truck> getTruckList() {
+    public List<Truck> getTruckList(LocalDate shippingDate, TruckTier truckTier) {
+        if(truckTier != null && shippingDate != null) {
+            return localRepository.findAllAvailableTrucks(shippingDate, truckTier);
+        }
         return localRepository.findAll();
     }
     
